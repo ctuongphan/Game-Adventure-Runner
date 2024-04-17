@@ -25,7 +25,7 @@ SCROLL_THRESH = 200
 ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 24
+TILE_TYPES = 25
 MAX_LEVELS = 3
 screen_scroll = 0
 bg_scroll = 0
@@ -109,10 +109,6 @@ def draw_bg():
 	width = sky_img.get_width()
 	for x in range(5):
 		screen.blit(sky_img, ((x * width) - bg_scroll * 0.5, 0))
-		# screen.blit(mountain_img, ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - mountain_img.get_height() - 300))
-		# screen.blit(pine1_img, ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - pine1_img.get_height() - 150))
-		# screen.blit(pine2_img, ((x * width) - bg_scroll * 0.8, SCREEN_HEIGHT - pine2_img.get_height()))
-
 
 #function to reset level
 def reset_level():
@@ -380,7 +376,7 @@ class World():
 					img_rect.x = x * TILE_SIZE
 					img_rect.y = y * TILE_SIZE
 					tile_data = (img, img_rect)
-					if tile >= 0 and tile <= 8 or tile == 23:
+					if tile >= 0 and tile <= 8 or tile == 23 or tile == 24:
 						self.obstacle_list.append(tile_data)
 					
 					elif tile >= 11 and tile <= 14:
