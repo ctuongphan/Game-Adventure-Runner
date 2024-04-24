@@ -11,9 +11,11 @@ pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
+LOWER_MARGIN = 100
+SIDE_MARGIN = 300
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Shooter')
+screen = pygame.display.set_mode((SCREEN_WIDTH + SIDE_MARGIN, SCREEN_HEIGHT + LOWER_MARGIN))
+pygame.display.set_caption('Adventure Runner')
 
 #set framerate
 clock = pygame.time.Clock()
@@ -25,14 +27,20 @@ SCROLL_THRESH = 200
 ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 25
+TILE_TYPES = 27
 MAX_LEVELS = 3
 screen_scroll = 0
 bg_scroll = 0
 level = 1
 start_game = False
 start_intro = False
+menu_game = False
 Vel_YY = -14
+
+scroll_left = False
+scroll_right = False
+scroll = 0
+scroll_speed = 1
 
 #define player action variables
 moving_left = False
@@ -59,10 +67,13 @@ grenade_fx.set_volume(0.05)
 start_img = pygame.image.load('PROJECT/IMG/start_btn.png').convert_alpha()
 exit_img = pygame.image.load('PROJECT/IMG/exit_btn.png').convert_alpha()
 restart_img = pygame.image.load('PROJECT/IMG/restart_btn.png').convert_alpha()
+menu_img = pygame.image.load('PROJECT/IMG/menu.jpg').convert_alpha()
 #background
+'''
 pine1_img = pygame.image.load('PROJECT/IMG/Background/pine1.png').convert_alpha()
 pine2_img = pygame.image.load('PROJECT/IMG/Background/pine2.png').convert_alpha()
 mountain_img = pygame.image.load('PROJECT/IMG/Background/mountain.png').convert_alpha()
+'''
 sky_img = pygame.image.load('PROJECT/IMG/Background/bg1.png').convert_alpha()
 #store tiles in a list
 img_list = []
@@ -107,8 +118,30 @@ def draw_text(text, font, text_col, x, y):
 def draw_bg():
 	screen.fill(BG)
 	width = sky_img.get_width()
-	for x in range(5):
+	for x in range(5): #cái này coi lại xem vì mình có 1 background thôi
 		screen.blit(sky_img, ((x * width) - bg_scroll * 0.5, 0))
+  
+#draw grid
+def draw_grid():
+    #vertical lines
+    for c in range(COLS + 1):
+        pygame.draw.line(screen, WHITE, (c * TILE_SIZE - scroll, 0), (c * TILE_SIZE, SCREEN_HEIGHT))
+    #horizontal lines
+    for c in range(ROWS + 1):
+        pygame.draw.line(screen, WHITE, (0, c * TILE_SIZE), (SCREEN_WIDTH, c * TILE_SIZE))
+
+#create buttons
+#make a button list
+button_list = []
+button_col = 0
+button_row = 0
+for i in range(len(img_list)):
+    tile_button = button.Button(SCREEN_WIDTH + (75 * button_col) + 50, 75 * button_row + 50, img_list[i], 1)
+    button_list.append(tile_button)
+    button_col += 1
+    if button_col == 3:
+        button_row += 1
+        button_col = 0
 
 #function to reset level
 def reset_level():
@@ -158,7 +191,7 @@ class Soldier(pygame.sprite.Sprite):
 		self.vision = pygame.Rect(0, 0, 150, 20)
 		self.idling = False
 		self.idling_counter = 0
-
+		self.index = 1
 		self.vel_yy =0
 		
 		#load all images for the players
@@ -167,9 +200,9 @@ class Soldier(pygame.sprite.Sprite):
 			#reset temporary list of images
 			temp_list = []
 			#count number of files in the folder
-			num_of_frames = len(os.listdir(f'PROJECT/IMG/{self.char_type}/{animation}'))
+			num_of_frames = len(os.listdir(f'PROJECT/IMG/{self.char_type}{self.index}/{animation}'))
 			for i in range(num_of_frames):
-				img = pygame.image.load(f'PROJECT/IMG/{self.char_type}/{animation}/{i}.png').convert_alpha()
+				img = pygame.image.load(f'PROJECT/IMG/{self.char_type}{self.index}/{animation}/{i}.png').convert_alpha()
 				img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
 				temp_list.append(img)
 			self.animation_list.append(temp_list)
@@ -360,6 +393,15 @@ class Soldier(pygame.sprite.Sprite):
 	def draw(self):
 		screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
+class Water(pygame.sprite.Sprite):
+	def __init__(self, img, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		self.image = img
+		self.rect = self.image.get_rect()
+		self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+	def update(self):
+		self.rect.x += screen_scroll
 
 class World():
 	def __init__(self):
@@ -376,9 +418,11 @@ class World():
 					img_rect.x = x * TILE_SIZE
 					img_rect.y = y * TILE_SIZE
 					tile_data = (img, img_rect)
-					if tile >= 0 and tile <= 8 or tile == 23 or tile == 24:
+					if (tile >= 0 and tile <= 8) or (tile >=11 and tile <=14) or  tile == 18 or (tile>=22 and tile<=26):
 						self.obstacle_list.append(tile_data)
-					
+					elif tile >= 9 and tile <= 10:
+						water = Water(img, x * TILE_SIZE, y * TILE_SIZE)
+						water_group.add(water)
 					elif tile >= 11 and tile <= 14:
 						decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
 						decoration_group.add(decoration)
@@ -390,10 +434,7 @@ class World():
 						Monster_group.add(Monster)
 					elif tile == 17:#create ammo box
 						item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
-						item_box_group.add(item_box)
-					elif tile == 18:#create grenade box
-						item_box = ItemBox('Grenade', x * TILE_SIZE, y * TILE_SIZE)
-						item_box_group.add(item_box)
+						# item_box_group.add(item_box)
 					elif tile == 19:#create health box
 						item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
 						item_box_group.add(item_box)
@@ -638,9 +679,13 @@ death_fade = ScreenFade(2, PINK, 4)
 
 
 #create buttons
-start_button = button.Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 - 150, start_img, 1)
-exit_button = button.Button(SCREEN_WIDTH // 2 - 110, SCREEN_HEIGHT // 2 + 50, exit_img, 1)
-restart_button = button.Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 50, restart_img, 2)
+start_button = button.Button(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 2 - 150, start_img, 1)
+menu_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 , menu_img, 1)
+
+exit_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 + 120, exit_img, 1)
+restart_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 - 50, restart_img, 2)
+back_img = pygame.image.load('PROJECT/IMG/back.png').convert_alpha()
+back_button = button.Button(10,  10 , back_img, 1)
 
 #create sprite groups
 Monster_group = pygame.sprite.Group()
@@ -668,13 +713,48 @@ with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
 world = World()
 player, health_bar = world.process_data(world_data)
 
+princess1 = pygame.image.load(f'PROJECT/IMG/Player1/Walk/0.png').convert_alpha() 
+princess1= pygame.transform.scale(princess1, (70, 70))
+
+princess2 = pygame.image.load(f'PROJECT/IMG/Player2/Walk/0.png').convert_alpha() 
+princess2= pygame.transform.scale(princess2, (70, 70))
+
+arrowLeft = pygame.image.load('PROJECT/IMG/left.jpg').convert_alpha()
+arrowLeft= pygame.transform.scale(arrowLeft, (50, 50))
+yNv = 300
+yLoai =400
+arLeft_button_nv = button.Button(SCREEN_WIDTH / 2+30, yNv, arrowLeft, 1)
+arLeft_button_loai = button.Button(SCREEN_WIDTH / 2+30, yLoai, arrowLeft, 1)
+
+
+
+arrowRight = pygame.image.load('PROJECT/IMG/right.jpg').convert_alpha()
+arrowRight= pygame.transform.scale(arrowRight, (50, 50))
+arRight_button_nv = button.Button(SCREEN_WIDTH / 2+70 +100, yNv, arrowRight, 1)
+arRight_button_loai = button.Button(SCREEN_WIDTH / 2+70 +100, yLoai, arrowRight, 1)
+
+Game_control = 0
+loaiphim1 = pygame.image.load('PROJECT/IMG/right.jpg').convert_alpha()
+loaiphim1= pygame.transform.scale(loaiphim1, (40, 40))
+
+loaiphim2 = pygame.image.load('PROJECT/IMG/left.jpg').convert_alpha()
+loaiphim2= pygame.transform.scale(loaiphim2, (40, 40))
 
 
 run = True
 while run:
 
 	clock.tick(FPS)
-
+	draw_bg()
+ 
+	#draw tile pannel and tiles
+	pygame.draw.rect(screen, GREEN, (SCREEN_WIDTH, 0, SIDE_MARGIN, SCREEN_HEIGHT))
+	
+	for i in button_list:
+		i.draw(screen)
+ 
+	Score = 0
+ 
 	if start_game == False:
 		#draw menu
 		screen.fill(BG)
@@ -684,11 +764,18 @@ while run:
 			start_intro = True
 		if exit_button.draw(screen):
 			run = False
+   
+		if menu_button.draw(screen):
+			menu_game = True
 	else:
 		#update background
 		draw_bg()
+		Score = sum(1 for monster in Monster_group if not monster.alive)
+		img=font.render(f'Score:{Score}',True,'red')
+		screen.blit(img,(10,100))
 		#draw world map
 		world.draw()
+		draw_grid()
 		#show player health
 		health_bar.draw(player.health)
 		#show ammo
@@ -711,14 +798,20 @@ while run:
 		grenade_group.update()
 		explosion_group.update()
 		item_box_group.update()
+  
 		decoration_group.update()
 		water_group.update()
 		exit_group.update()
 		bullet_group.draw(screen)
+  
 		grenade_group.draw(screen)
 		explosion_group.draw(screen)
 		item_box_group.draw(screen)
+		water_group.draw(screen)
+  
 		decoration_group.draw(screen)
+		exit_group.draw(screen)
+  
 
 
 		#update player actions
@@ -757,22 +850,22 @@ while run:
 								world_data[x][y] = int(tile)
 					world = World()
 					player, health_bar = world.process_data(world_data)	
-		# else:
-		# 	screen_scroll = 0
-		# 	if death_fade.fade():
-		# 		if restart_button.draw(screen):
-		# 			death_fade.fade_counter = 0
-		# 			start_intro = True
-		# 			bg_scroll = 0
-		# 			world_data = reset_level()
-		# 			#load in level data and create world
-		# 			with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
-		# 				reader = csv.reader(csvfile, delimiter=',')
-		# 				for x, row in enumerate(reader):
-		# 					for y, tile in enumerate(row):
-		# 						world_data[x][y] = int(tile)
-		# 			world = World()
-		# 			player, health_bar = world.process_data(world_data)
+		else:
+			screen_scroll = 0
+			if death_fade.fade():
+				if restart_button.draw(screen):
+					death_fade.fade_counter = 0
+					start_intro = True
+					bg_scroll = 0
+					world_data = reset_level()
+					#load in level data and create world
+					with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
+						reader = csv.reader(csvfile, delimiter=',')
+						for x, row in enumerate(reader):
+							for y, tile in enumerate(row):
+								world_data[x][y] = int(tile)
+					world = World()
+					player, health_bar = world.process_data(world_data)
 
 
 	for event in pygame.event.get():
@@ -780,35 +873,114 @@ while run:
 		if event.type == pygame.QUIT:
 			run = False
 		#keyboard presses
+		
 		if event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_a:
-				moving_left = True
-			if event.key == pygame.K_d:
-				moving_right = True
-			if event.key == pygame.K_SPACE:
-				shoot = True
-			if event.key == pygame.K_q:
-				grenade = True
-			if event.key == pygame.K_w and player.alive:
-				player.jump = True
-				jump_fx.play()
-			if event.key == pygame.K_ESCAPE:
-				run = False
+			if Game_control == 0:
+				if event.key == pygame.K_a:
+					moving_left = True
+				if event.key == pygame.K_d:
+					moving_right = True
+				if event.key == pygame.K_SPACE:
+					shoot = True
+				if event.key == pygame.K_q:
+					grenade = True
+				if event.key == pygame.K_w and player.alive:
+					player.jump = True
+					jump_fx.play()
+				if event.key == pygame.K_ESCAPE:
+					run = False
+			if Game_control == 1:
+				if event.key == pygame.K_LEFT:
+					moving_left = True
+				if event.key == pygame.K_RIGHT:
+					moving_right = True
+				if event.key == pygame.K_SPACE:
+					shoot = True
+				if event.key == pygame.K_q:
+					grenade = True
+				if event.key == pygame.K_UP and player.alive:
+					player.jump = True
+					jump_fx.play()
+				if event.key == pygame.K_ESCAPE:
+					run = False
+
 
 
 		#keyboard button released
 		if event.type == pygame.KEYUP:
-			if event.key == pygame.K_a:
-				moving_left = False
-			if event.key == pygame.K_d:
-				moving_right = False
-			if event.key == pygame.K_SPACE:
-				shoot = False
-			if event.key == pygame.K_q:
-				grenade = False
-				grenade_thrown = False
+			if Game_control == 0:
+				if event.key == pygame.K_a:
+					moving_left = False
+				if event.key == pygame.K_d:
+					moving_right = False
+				if event.key == pygame.K_SPACE:
+					shoot = False
+				if event.key == pygame.K_q:
+					grenade = False
+					grenade_thrown = False
+			if Game_control == 1:
+				if event.key == pygame.K_LEFT:
+					moving_left = False
+				if event.key == pygame.K_RIGHT:
+					moving_right = False
+				if event.key == pygame.K_SPACE:
+					shoot = False
+				if event.key == pygame.K_q:
+					grenade = False
+				
+				
+
+	if menu_game:
+		screen.fill(BG)
+
+		font = pygame.font.SysFont('Arial', 32, bold=True)
+
+		choose_nv = font.render("Choose", True, (255, 255, 255))
+		screen.blit(choose_nv, (SCREEN_WIDTH / 2 - 100, yNv))
+		
+	
+		if player.index==1 and arLeft_button_nv.draw(screen):
+			player.index=2
+		if player.index==1 and arRight_button_nv.draw(screen):
+			player.index=2
+		if player.index==2 and arLeft_button_nv.draw(screen):
+			player.index=1
+		if player.index==2 and arRight_button_nv.draw(screen):
+			player.index=1
+
+		if player.index==1:
+			screen.blit(princess1, (SCREEN_WIDTH/2+100, yNv))
+		else:
+			screen.blit(princess2, (SCREEN_WIDTH/2+100, yNv))
+			
+		choose_loai = font.render("Choose", True, (255, 255, 255))
+		screen.blit(choose_loai, (SCREEN_WIDTH / 2 - 100, yLoai))
+
+		if Game_control == 0 and arLeft_button_loai.draw(screen):
+			Game_control = 1
+		if Game_control ==0 and arRight_button_loai.draw(screen):
+			Game_control = 1
+		if Game_control == 1 and arLeft_button_loai.draw(screen):
+			Game_control = 0
+		if Game_control ==1 and arRight_button_loai.draw(screen):
+			Game_control = 0
+		if Game_control == 0:
+			screen.blit(loaiphim1, (SCREEN_WIDTH/2+100, yLoai))
+		else:
+			screen.blit(loaiphim2, (SCREEN_WIDTH/2+100, yLoai))
+		if back_button.draw(screen):
+			menu_game = False
 
 
+		
+
+
+
+
+
+
+		
+  
 	pygame.display.update()
 
 pygame.quit()
