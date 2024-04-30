@@ -11,10 +11,10 @@ pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
-LOWER_MARGIN = 100
-SIDE_MARGIN = 300
+#LOWER_MARGIN = 100
+#SIDE_MARGIN = 300
 
-screen = pygame.display.set_mode((SCREEN_WIDTH + SIDE_MARGIN, SCREEN_HEIGHT + LOWER_MARGIN))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Adventure Runner')
 
 #set framerate
@@ -25,10 +25,10 @@ FPS = 60
 GRAVITY = 0.75
 SCROLL_THRESH = 200
 ROWS = 16
-COLS = 150
+COLS = 120
 TILE_SIZE = SCREEN_HEIGHT // ROWS
 TILE_TYPES = 27
-MAX_LEVELS = 3
+MAX_LEVELS = 2
 screen_scroll = 0
 bg_scroll = 0
 level = 1
@@ -100,7 +100,8 @@ item_boxes = {
 
 
 #define colours
-BG = (144, 201, 120)
+#BG = (144, 201, 120)
+BG = (255, 193, 193)
 RED = (255, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
@@ -121,7 +122,7 @@ def draw_bg():
 	for x in range(5): #cái này coi lại xem vì mình có 1 background thôi
 		screen.blit(sky_img, ((x * width) - bg_scroll * 0.5, 0))
   
-#draw grid
+'''#draw grid
 def draw_grid():
     #vertical lines
     for c in range(COLS + 1):
@@ -129,6 +130,7 @@ def draw_grid():
     #horizontal lines
     for c in range(ROWS + 1):
         pygame.draw.line(screen, WHITE, (0, c * TILE_SIZE), (SCREEN_WIDTH, c * TILE_SIZE))
+'''
 
 #create buttons
 #make a button list
@@ -166,7 +168,7 @@ def reset_level():
 
 
 class Soldier(pygame.sprite.Sprite):
-	def __init__(self, char_type, x, y, scale, speed, ammo, grenades):
+	def __init__(self, char_type, x, y, scale, speed, ammo, grenades, index = 1):
 		pygame.sprite.Sprite.__init__(self)
 		self.alive = True
 		self.char_type = char_type
@@ -191,7 +193,7 @@ class Soldier(pygame.sprite.Sprite):
 		self.vision = pygame.Rect(0, 0, 150, 20)
 		self.idling = False
 		self.idling_counter = 0
-		self.index = 1
+		self.index = index
 		self.vel_yy =0
 		
 		#load all images for the players
@@ -407,7 +409,7 @@ class World():
 	def __init__(self):
 		self.obstacle_list = []
 
-	def process_data(self, data):
+	def process_data(self, data, index):
 		self.level_length = len(data[0])
 		#iterate through each value in level data file
 		for y, row in enumerate(data):
@@ -427,10 +429,10 @@ class World():
 						decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
 						decoration_group.add(decoration)
 					elif tile == 15:#create player
-						player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5)
+						player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5,index)
 						health_bar = HealthBar(10, 10, player.health, player.health)
 					elif tile == 16:#create enemies
-						Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0)
+						Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0,1)
 						Monster_group.add(Monster)
 					elif tile == 17:#create ammo box
 						item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
@@ -676,14 +678,15 @@ class ScreenFade():
 #create screen fades
 intro_fade = ScreenFade(1, BLACK, 4)
 death_fade = ScreenFade(2, PINK, 4)
+win_fade = ScreenFade(2, WHITE, 4)
 
 
 #create buttons
-start_button = button.Button(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 2 - 150, start_img, 1)
-menu_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 , menu_img, 1)
+start_button = button.Button(SCREEN_WIDTH // 2 -100  , SCREEN_HEIGHT // 2 - 150, start_img, 1)
+menu_button = button.Button(SCREEN_WIDTH // 2 -100 , SCREEN_HEIGHT // 2 -40, menu_img, 1)
 
-exit_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 + 120, exit_img, 1)
-restart_button = button.Button(SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2 - 50, restart_img, 2)
+exit_button = button.Button(SCREEN_WIDTH // 2 -100	 , SCREEN_HEIGHT // 2 + 70, exit_img, 1)
+restart_button = button.Button(SCREEN_WIDTH // 2 -100, SCREEN_HEIGHT // 2 - 50, restart_img, 2)
 back_img = pygame.image.load('PROJECT/IMG/back.png').convert_alpha()
 back_button = button.Button(10,  10 , back_img, 1)
 
@@ -711,7 +714,8 @@ with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
 		for y, tile in enumerate(row):
 			world_data[x][y] = int(tile)
 world = World()
-player, health_bar = world.process_data(world_data)
+index =1
+player, health_bar = world.process_data(world_data,index)
 
 princess1 = pygame.image.load(f'PROJECT/IMG/Player1/Walk/0.png').convert_alpha() 
 princess1= pygame.transform.scale(princess1, (70, 70))
@@ -719,26 +723,27 @@ princess1= pygame.transform.scale(princess1, (70, 70))
 princess2 = pygame.image.load(f'PROJECT/IMG/Player2/Walk/0.png').convert_alpha() 
 princess2= pygame.transform.scale(princess2, (70, 70))
 
-arrowLeft = pygame.image.load('PROJECT/IMG/left.jpg').convert_alpha()
+arrowLeft = pygame.image.load('PROJECT/IMG/left.png').convert_alpha()
 arrowLeft= pygame.transform.scale(arrowLeft, (50, 50))
-yNv = 300
-yLoai =400
-arLeft_button_nv = button.Button(SCREEN_WIDTH / 2+30, yNv, arrowLeft, 1)
-arLeft_button_loai = button.Button(SCREEN_WIDTH / 2+30, yLoai, arrowLeft, 1)
+yNv = 200
+yLoai =330
+xAR = SCREEN_WIDTH / 2 
+arLeft_button_nv = button.Button(xAR, yNv, arrowLeft, 1)
+arLeft_button_loai = button.Button(xAR, yLoai, arrowLeft, 1)
 
 
 
-arrowRight = pygame.image.load('PROJECT/IMG/right.jpg').convert_alpha()
+arrowRight = pygame.image.load('PROJECT/IMG/right.png').convert_alpha()
 arrowRight= pygame.transform.scale(arrowRight, (50, 50))
-arRight_button_nv = button.Button(SCREEN_WIDTH / 2+70 +100, yNv, arrowRight, 1)
-arRight_button_loai = button.Button(SCREEN_WIDTH / 2+70 +100, yLoai, arrowRight, 1)
+arRight_button_nv = button.Button(xAR +120, yNv, arrowRight, 1)
+arRight_button_loai = button.Button(xAR +120, yLoai, arrowRight, 1)
 
 Game_control = 0
-loaiphim1 = pygame.image.load('PROJECT/IMG/right.jpg').convert_alpha()
-loaiphim1= pygame.transform.scale(loaiphim1, (40, 40))
+loaiphim1 = pygame.image.load('PROJECT/IMG/BP1.png').convert_alpha()
+loaiphim1= pygame.transform.scale(loaiphim1, (80, 80))
 
-loaiphim2 = pygame.image.load('PROJECT/IMG/left.jpg').convert_alpha()
-loaiphim2= pygame.transform.scale(loaiphim2, (40, 40))
+loaiphim2 = pygame.image.load('PROJECT/IMG/BP2.png').convert_alpha()
+loaiphim2= pygame.transform.scale(loaiphim2, (80, 80))
 
 
 run = True
@@ -748,13 +753,13 @@ while run:
 	draw_bg()
  
 	#draw tile pannel and tiles
-	pygame.draw.rect(screen, GREEN, (SCREEN_WIDTH, 0, SIDE_MARGIN, SCREEN_HEIGHT))
+	#pygame.draw.rect(screen, GREEN, (SCREEN_WIDTH, 0, SIDE_MARGIN, SCREEN_HEIGHT))
 	
 	for i in button_list:
 		i.draw(screen)
  
 	Score = 0
- 
+	
 	if start_game == False:
 		#draw menu
 		screen.fill(BG)
@@ -770,12 +775,13 @@ while run:
 	else:
 		#update background
 		draw_bg()
-		Score = sum(1 for monster in Monster_group if not monster.alive)
+		Score = sum(1 for monster in Monster_group if not monster.alive) *10
 		img=font.render(f'Score:{Score}',True,'red')
 		screen.blit(img,(10,100))
 		#draw world map
 		world.draw()
-		draw_grid()
+		#draw_grid()
+  
 		#show player health
 		health_bar.draw(player.health)
 		#show ammo
@@ -813,7 +819,13 @@ while run:
 		exit_group.draw(screen)
   
 
-
+		if level ==3:
+				win_fade.fade()
+				text = 'WIN'
+				font_size = 100  # Kích thước mới bạn muốn
+				font = pygame.font.Font(None, font_size)
+				img = font.render(text, True, 'green')
+				screen.blit(img,(SCREEN_HEIGHT/2+50,SCREEN_HEIGHT/2))
 		#update player actions
 		if player.alive:
 			#shoot bullets
@@ -848,8 +860,9 @@ while run:
 						for x, row in enumerate(reader):
 							for y, tile in enumerate(row):
 								world_data[x][y] = int(tile)
-					world = World()
-					player, health_bar = world.process_data(world_data)	
+					world = World() 
+					player, health_bar = world.process_data(world_data, index)	
+			
 		else:
 			screen_scroll = 0
 			if death_fade.fade():
@@ -865,7 +878,7 @@ while run:
 							for y, tile in enumerate(row):
 								world_data[x][y] = int(tile)
 					world = World()
-					player, health_bar = world.process_data(world_data)
+					player, health_bar = world.process_data(world_data, index)
 
 
 	for event in pygame.event.get():
@@ -935,26 +948,37 @@ while run:
 
 		font = pygame.font.SysFont('Arial', 32, bold=True)
 
-		choose_nv = font.render("Choose", True, (255, 255, 255))
-		screen.blit(choose_nv, (SCREEN_WIDTH / 2 - 100, yNv))
+		choose_nv = font.render("Choose", True, (205, 85, 85))
+		screen.blit(choose_nv, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 - 120))
 		
-	
-		if player.index==1 and arLeft_button_nv.draw(screen):
-			player.index=2
-		if player.index==1 and arRight_button_nv.draw(screen):
-			player.index=2
-		if player.index==2 and arLeft_button_nv.draw(screen):
-			player.index=1
-		if player.index==2 and arRight_button_nv.draw(screen):
-			player.index=1
+		flag_check_index = True
 
-		if player.index==1:
-			screen.blit(princess1, (SCREEN_WIDTH/2+100, yNv))
-		else:
-			screen.blit(princess2, (SCREEN_WIDTH/2+100, yNv))
+		if index==1 and arLeft_button_nv.draw(screen):
+			index=2
+			flag_check_index = False
+
+		if index==1 and arRight_button_nv.draw(screen):
+			index=2
+			flag_check_index = False
+
+		if index==2 and arLeft_button_nv.draw(screen):
+			index=1
+			flag_check_index = False
+
+		if index==2 and arRight_button_nv.draw(screen):
+			index=1
+			flag_check_index = False
+
+		if index==1:
+			screen.blit(princess1, (xAR+50, yNv))
+		elif index ==2:
+			screen.blit(princess2, (xAR+50, yNv))
+		if flag_check_index == False:
+			player, health_bar = world.process_data(world_data,index)
+
 			
-		choose_loai = font.render("Choose", True, (255, 255, 255))
-		screen.blit(choose_loai, (SCREEN_WIDTH / 2 - 100, yLoai))
+		choose_loai = font.render("Choose", True, (205, 85, 85))
+		screen.blit(choose_loai, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 + 10))
 
 		if Game_control == 0 and arLeft_button_loai.draw(screen):
 			Game_control = 1
@@ -965,9 +989,9 @@ while run:
 		if Game_control ==1 and arRight_button_loai.draw(screen):
 			Game_control = 0
 		if Game_control == 0:
-			screen.blit(loaiphim1, (SCREEN_WIDTH/2+100, yLoai))
+			screen.blit(loaiphim1, (xAR+50, yLoai))
 		else:
-			screen.blit(loaiphim2, (SCREEN_WIDTH/2+100, yLoai))
+			screen.blit(loaiphim2, (xAR+50, yLoai))
 		if back_button.draw(screen):
 			menu_game = False
 
