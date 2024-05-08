@@ -11,8 +11,6 @@ pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
-#LOWER_MARGIN = 100
-#SIDE_MARGIN = 300
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Adventure Runner')
@@ -51,9 +49,6 @@ grenade_thrown = False
 
 
 #load music and sounds
-#pygame.mixer.music.load('audio/music2.mp3')
-#pygame.mixer.music.set_volume(0.3)
-#pygame.mixer.music.play(-1, 0.0, 5000)
 jump_fx = pygame.mixer.Sound('PROJECT/audio/jump.wav')
 jump_fx.set_volume(0.05)
 shot_fx = pygame.mixer.Sound('PROJECT/audio/shot.wav')
@@ -68,12 +63,8 @@ start_img = pygame.image.load('PROJECT/IMG/start_btn.png').convert_alpha()
 exit_img = pygame.image.load('PROJECT/IMG/exit_btn.png').convert_alpha()
 restart_img = pygame.image.load('PROJECT/IMG/restart_btn.png').convert_alpha()
 menu_img = pygame.image.load('PROJECT/IMG/menu.jpg').convert_alpha()
+pause_img = pygame.image.load('PROJECT/IMG/pausen.png').convert_alpha()
 #background
-'''
-pine1_img = pygame.image.load('PROJECT/IMG/Background/pine1.png').convert_alpha()
-pine2_img = pygame.image.load('PROJECT/IMG/Background/pine2.png').convert_alpha()
-mountain_img = pygame.image.load('PROJECT/IMG/Background/mountain.png').convert_alpha()
-'''
 sky_img = pygame.image.load('PROJECT/IMG/Background/bg1.png').convert_alpha()
 #store tiles in a list
 img_list = []
@@ -83,18 +74,15 @@ for x in range(TILE_TYPES):
 	img_list.append(img)
 #bullet
 bullet_img = pygame.image.load('PROJECT/IMG/icons/bullet.png').convert_alpha()
-#grenade
-grenade_img = pygame.image.load('PROJECT/IMG/icons/grenade.png').convert_alpha()
+
 #pick up boxes
 health_box_img = pygame.image.load('PROJECT/IMG/icons/health_box.png').convert_alpha()
 ammo_box_img = pygame.image.load('PROJECT/IMG/icons/ammo_box.png').convert_alpha()
-grenade_box_img = pygame.image.load('PROJECT/IMG/icons/grenade_box.png').convert_alpha()
 Shoe_box_img = pygame.image.load('PROJECT/IMG/icons/21.png').convert_alpha()
 
 item_boxes = {
 	'Health'	: health_box_img,
 	'Ammo'		: ammo_box_img,
-	'Grenade'	: grenade_box_img,
 	'Shoe'		: Shoe_box_img
 }
 
@@ -119,18 +107,9 @@ def draw_text(text, font, text_col, x, y):
 def draw_bg():
 	screen.fill(BG)
 	width = sky_img.get_width()
-	for x in range(5): #cái này coi lại xem vì mình có 1 background thôi
+	for x in range(5): 
 		screen.blit(sky_img, ((x * width) - bg_scroll * 0.5, 0))
-  
-'''#draw grid
-def draw_grid():
-    #vertical lines
-    for c in range(COLS + 1):
-        pygame.draw.line(screen, WHITE, (c * TILE_SIZE - scroll, 0), (c * TILE_SIZE, SCREEN_HEIGHT))
-    #horizontal lines
-    for c in range(ROWS + 1):
-        pygame.draw.line(screen, WHITE, (0, c * TILE_SIZE), (SCREEN_WIDTH, c * TILE_SIZE))
-'''
+
 
 #create buttons
 #make a button list
@@ -149,8 +128,8 @@ for i in range(len(img_list)):
 def reset_level():
 	Monster_group.empty()
 	bullet_group.empty()
-	grenade_group.empty()
-	explosion_group.empty()
+	#grenade_group.empty()
+	#explosion_group.empty()
 	item_box_group.empty()
 	decoration_group.empty()
 	water_group.empty()
@@ -165,10 +144,59 @@ def reset_level():
 	return data
 
 
+"""
+    Đại diện cho một nhân vật trong trò chơi.
 
+    Tham số:
+        char_type (str): Loại nhân vật ('player' hoặc 'Monster').
+        x (int): Tọa độ X của vị trí bắt đầu của nhân vật.
+        y (int): Tọa độ Y của vị trí bắt đầu của nhân vật.
+        scale (float): Hệ số thu phóng cho kích thước của nhân vật.
+        speed (int): Tốc độ di chuyển của nhân vật.
+        ammo (int): Số lượng đạn của nhân vật.
+        grenades (int): Số lượng lựu đạn của nhân vật.
+        index (int, tùy chọn): Chỉ số của nhân vật, mặc định là 1.
 
+    Thuộc tính:
+        alive (bool): Cho biết liệu nhân vật còn sống hay không.
+        char_type (str): Loại nhân vật ('player' hoặc 'Monster').
+        speed (int): Tốc độ di chuyển của nhân vật.
+        ammo (int): Số lượng đạn của nhân vật.
+        start_ammo (int): Số đạn ban đầu.
+        shoot_cooldown (int): Thời gian nghỉ sau mỗi lần bắn.
+        grenades (int): Số lượng lựu đạn của nhân vật.
+        health (int): Sức khỏe hiện tại của nhân vật.
+        max_health (int): Sức khỏe tối đa của nhân vật.
+        direction (int): Hướng mà nhân vật đang nhìn ( -1 cho trái, 1 cho phải).
+        vel_y (int): Vận tốc theo chiều dọc của nhân vật.
+        jump (bool): Cho biết liệu nhân vật đang nhảy hay không.
+        in_air (bool): Cho biết liệu nhân vật có đang ở trạng thái nảy hay không.
+        flip (bool): Cho biết liệu hình ảnh của nhân vật có bị lật ngược hay không.
+        animation_list (list): Danh sách chứa các khung hình của hoạt hình của nhân vật.
+        frame_index (int): Chỉ số của khung hình hiện tại trong danh sách hoạt hình.
+        action (int): Hành động hiện tại của nhân vật (0 cho đứng yên, 1 cho chạy, 2 cho nhảy, 3 cho chết).
+        update_time (int): Thời gian cập nhật hoạt hình lần cuối.
+        move_counter (int): Bộ đếm cho việc di chuyển của nhân vật.
+        vision (pygame.Rect): Hình chữ nhật đại diện cho phạm vi tầm nhìn của nhân vật.
+        idling (bool): Cho biết liệu nhân vật có đang đứng yên hay không.
+        idling_counter (int): Bộ đếm cho thời gian nhân vật đứng yên.
+        index (int): Chỉ số của nhân vật.
+        vel_yy (int): Bộ điều chỉnh vận tốc theo chiều dọc cho việc nhảy.
+
+    Phương thức:
+        update(self): Cập nhật trạng thái và hoạt hình của nhân vật.
+        move(self, moving_left, moving_right): Di chuyển nhân vật theo chiều ngang và xử lý việc nhảy.
+        shoot(self): Bắn đạn nếu điều kiện đủ.
+        ai(self): Xử lý hành vi trí tuệ nhân tạo cho nhân vật.
+        update_animation(self): Cập nhật các khung hình hoạt hình của nhân vật.
+        update_action(self, new_action): Cập nhật hành động của nhân vật.
+        check_alive(self): Kiểm tra xem nhân vật còn sống hay không.
+        draw(self): Vẽ nhân vật lên màn hình.
+"""
 class Soldier(pygame.sprite.Sprite):
-	def __init__(self, char_type, x, y, scale, speed, ammo, grenades, index = 1):
+	# def __init__(self, char_type, x, y, scale, speed, ammo,grenades, index = 1):
+	def __init__(self, char_type, x, y, scale, speed, ammo, index = 1):
+     
 		pygame.sprite.Sprite.__init__(self)
 		self.alive = True
 		self.char_type = char_type
@@ -176,7 +204,6 @@ class Soldier(pygame.sprite.Sprite):
 		self.ammo = ammo
 		self.start_ammo = ammo
 		self.shoot_cooldown = 0
-		self.grenades = grenades
 		self.health = 100
 		self.max_health = self.health
 		self.direction = 1
@@ -230,7 +257,8 @@ class Soldier(pygame.sprite.Sprite):
 		Vel_YY= -14
 		dx = 0
 		dy = 0
-
+		center_x = SCREEN_WIDTH // 2
+  
 		#assign movement variables if moving left or right
 		if moving_left:
 			dx = -self.speed
@@ -293,18 +321,26 @@ class Soldier(pygame.sprite.Sprite):
 		if self.char_type == 'player':
 			if self.rect.left + dx < 0 or self.rect.right + dx > SCREEN_WIDTH:
 				dx = 0
-
+		
+			
 		#update rectangle position
 		self.rect.x += dx
 		self.rect.y += dy
 
 		#update scroll based on player position
 		if self.char_type == 'player':
-			if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
-				or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
-				self.rect.x -= dx
-				screen_scroll = -dx
-
+#   and (moving_left or moving_right):
+			# if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
+			# 	or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+			# 	self.rect.x -= dx
+			# 	# screen_scroll = -dx
+			# 	screen_scroll -= dx
+			if self.rect.centerx >= center_x:
+				screen_scroll -= self.speed
+				self.rect.x -= self.speed  # Di chuyển nhân vật ngược lại để giữ nguyên vị trí giữa màn hình
+			else:
+				screen_scroll = 0
+			
 		return screen_scroll, level_complete
 
 
@@ -395,6 +431,23 @@ class Soldier(pygame.sprite.Sprite):
 	def draw(self):
 		screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
+
+"""
+    Đại diện cho một vùng nước trong trò chơi.
+
+    Tham số:
+        img (pygame.Surface): Hình ảnh đại diện cho vùng nước.
+        x (int): Tọa độ X của vị trí của vùng nước.
+        y (int): Tọa độ Y của vị trí của vùng nước.
+
+    Thuộc tính:
+        image (pygame.Surface): Hình ảnh của vùng nước.
+        rect (pygame.Rect): Hình chữ nhật giới hạn vùng nước trên màn hình.
+
+    Phương thức:
+        update(self): Cập nhật vị trí của vùng nước dựa trên sự cuộn màn hình.
+"""
+
 class Water(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -405,6 +458,17 @@ class Water(pygame.sprite.Sprite):
 	def update(self):
 		self.rect.x += screen_scroll
 
+"""
+    Đại diện cho thế giới trong trò chơi.
+
+    Thuộc tính:
+        obstacle_list (list): Danh sách chứa các vật cản trong thế giới.
+
+    Phương thức:
+        __init__(self): Khởi tạo một thế giới mới.
+        process_data(self, data, index): Xử lý dữ liệu cấp độ để tạo ra các đối tượng trong thế giới.
+        draw(self): Vẽ các đối tượng trong thế giới lên màn hình.
+"""
 class World():
 	def __init__(self):
 		self.obstacle_list = []
@@ -429,22 +493,24 @@ class World():
 						decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
 						decoration_group.add(decoration)
 					elif tile == 15:#create player
-						player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5,index)
+						# player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5,index)
+						player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20,index)
 						health_bar = HealthBar(10, 10, player.health, player.health)
 					elif tile == 16:#create enemies
-						Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0,1)
+						# Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0,1)	
+						Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 1)
 						Monster_group.add(Monster)
 					elif tile == 17:#create ammo box
-						item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
-						# item_box_group.add(item_box)
+						item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE, 35, 35)
+						item_box_group.add(item_box)
 					elif tile == 19:#create health box
-						item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
+						item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE, 35, 35)
 						item_box_group.add(item_box)
 					elif tile == 20:#create exit
 						exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
 						exit_group.add(exit)
 					elif tile == 21:#create exit
-						item_box = ItemBox('Shoe', x * TILE_SIZE, y * TILE_SIZE)
+						item_box = ItemBox('Shoe', x * TILE_SIZE, y * TILE_SIZE, 35, 35)
 						item_box_group.add(item_box)
 
 		return player, health_bar
@@ -455,6 +521,21 @@ class World():
 			tile[1][0] += screen_scroll
 			screen.blit(tile[0], tile[1])
 
+"""
+    Đại diện cho một đối tượng trang trí trong trò chơi.
+
+    Tham số:
+        img (pygame.Surface): Hình ảnh đại diện cho đối tượng trang trí.
+        x (int): Tọa độ X của vị trí của đối tượng trang trí.
+        y (int): Tọa độ Y của vị trí của đối tượng trang trí.
+
+    Thuộc tính:
+        image (pygame.Surface): Hình ảnh của đối tượng trang trí.
+        rect (pygame.Rect): Hình chữ nhật giới hạn đối tượng trang trí trên màn hình.
+
+    Phương thức:
+        update(self): Cập nhật vị trí của đối tượng trang trí dựa trên sự cuộn màn hình.
+"""
 
 class Decoration(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
@@ -467,6 +548,21 @@ class Decoration(pygame.sprite.Sprite):
 		self.rect.x += screen_scroll
 
 
+"""
+    Đại diện cho một đối tượng cổng thoát trong trò chơi.
+
+    Tham số:
+        img (pygame.Surface): Hình ảnh đại diện cho đối tượng cổng thoát.
+        x (int): Tọa độ X của vị trí của đối tượng cổng thoát.
+        y (int): Tọa độ Y của vị trí của đối tượng cổng thoát.
+
+    Thuộc tính:
+        image (pygame.Surface): Hình ảnh của đối tượng cổng thoát.
+        rect (pygame.Rect): Hình chữ nhật giới hạn đối tượng cổng thoát trên màn hình.
+
+    Phương thức:
+        update(self): Cập nhật vị trí của đối tượng cổng thoát dựa trên sự cuộn màn hình.
+"""
 
 class Exit(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
@@ -478,12 +574,29 @@ class Exit(pygame.sprite.Sprite):
 	def update(self):
 		self.rect.x += screen_scroll
 
+"""
+    Đại diện cho một hộp vật phẩm trong trò chơi.
+
+    Tham số:
+        item_type (str): Loại vật phẩm trong hộp ('Health', 'Ammo', 'Grenade', 'Shoe').
+        x (int): Tọa độ X của vị trí của hộp vật phẩm.
+        y (int): Tọa độ Y của vị trí của hộp vật phẩm.
+
+    Thuộc tính:
+        item_type (str): Loại vật phẩm trong hộp ('Health', 'Ammo', 'Grenade', 'Shoe').
+        image (pygame.Surface): Hình ảnh của hộp vật phẩm.
+        rect (pygame.Rect): Hình chữ nhật giới hạn hộp vật phẩm trên màn hình.
+
+    Phương thức:
+        update(self): Cập nhật vị trí của hộp vật phẩm dựa trên sự cuộn màn hình và xử lý khi người chơi nhận được hộp vật phẩm.
+"""
 
 class ItemBox(pygame.sprite.Sprite):
-	def __init__(self, item_type, x, y):
+	def __init__(self, item_type, x, y, width, height):
 		pygame.sprite.Sprite.__init__(self)
 		self.item_type = item_type
-		self.image = item_boxes[self.item_type]
+		# self.image = item_boxes[self.item_type]
+		self.image = pygame.transform.scale(item_boxes[self.item_type], (width, height))
 		self.rect = self.image.get_rect()
 		self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
@@ -500,14 +613,26 @@ class ItemBox(pygame.sprite.Sprite):
 					player.health = player.max_health
 			elif self.item_type == 'Ammo':
 				player.ammo += 15
-			elif self.item_type == 'Grenade':
-				player.grenades += 3
+			# elif self.item_type == 'Grenade':
+			# 	player.grenades += 3
 			elif self.item_type == 'Shoe':
 				#delete the item box
 				player.vel_yy = 4
 				
 			self.kill()
 
+"""
+    Đại diện cho thanh máu trong trò chơi.
+
+    Tham số:
+        x (int): Tọa độ X của thanh máu trên màn hình.
+        y (int): Tọa độ Y của thanh máu trên màn hình.
+        health (int): Sức khỏe hiện tại.
+        max_health (int): Sức khỏe tối đa.
+
+    Phương thức:
+        draw(self, health): Vẽ thanh máu trên màn hình với sức khỏe mới cập nhật.
+"""
 
 class HealthBar():
 	def __init__(self, x, y, health, max_health):
@@ -525,6 +650,23 @@ class HealthBar():
 		pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
 		pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
 
+"""
+    Đại diện cho một viên đạn trong trò chơi.
+
+    Tham số:
+        x (int): Tọa độ X ban đầu của viên đạn.
+        y (int): Tọa độ Y ban đầu của viên đạn.
+        direction (int): Hướng di chuyển của viên đạn (-1 hoặc 1).
+
+    Thuộc tính:
+        speed (int): Tốc độ di chuyển của viên đạn.
+        image (pygame.Surface): Hình ảnh của viên đạn.
+        rect (pygame.Rect): Hình chữ nhật giới hạn viên đạn trên màn hình.
+        direction (int): Hướng di chuyển của viên đạn (-1 hoặc 1).
+
+    Phương thức:
+        update(self): Cập nhật vị trí của viên đạn và xử lý va chạm với các đối tượng trong trò chơi.
+"""
 
 class Bullet(pygame.sprite.Sprite):
 	def __init__(self, x, y, direction):
@@ -558,98 +700,23 @@ class Bullet(pygame.sprite.Sprite):
 					self.kill()
 
 
+"""
+    Đại diện cho hiệu ứng làm mờ màn hình trong trò chơi.
 
-class Grenade(pygame.sprite.Sprite):
-	def __init__(self, x, y, direction):
-		pygame.sprite.Sprite.__init__(self)
-		self.timer = 100
-		self.vel_y = -11
-		self.speed = 7
-		self.image = grenade_img
-		self.rect = self.image.get_rect()
-		self.rect.center = (x, y)
-		self.width = self.image.get_width()
-		self.height = self.image.get_height()
-		self.direction = direction
+    Tham số:
+        direction (int): Hướng của hiệu ứng làm mờ màn hình (1 hoặc 2).
+        colour (tuple): Màu của hiệu ứng làm mờ màn hình (dạng (R, G, B)).
+        speed (int): Tốc độ của hiệu ứng làm mờ màn hình.
 
-	def update(self):
-		self.vel_y += GRAVITY
-		dx = self.direction * self.speed
-		dy = self.vel_y
+    Thuộc tính:
+        direction (int): Hướng của hiệu ứng làm mờ màn hình (1 hoặc 2).
+        colour (tuple): Màu của hiệu ứng làm mờ màn hình (dạng (R, G, B)).
+        speed (int): Tốc độ của hiệu ứng làm mờ màn hình.
+        fade_counter (int): Bộ đếm để điều chỉnh tốc độ và kích thước của hiệu ứng làm mờ.
 
-		#check for collision with level
-		for tile in world.obstacle_list:
-			#check collision with walls
-			if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
-				self.direction *= -1
-				dx = self.direction * self.speed
-			#check for collision in the y direction
-			if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
-				self.speed = 0
-				#check if below the ground, i.e. thrown up
-				if self.vel_y < 0:
-					self.vel_y = 0
-					dy = tile[1].bottom - self.rect.top
-				#check if above the ground, i.e. falling
-				elif self.vel_y >= 0:
-					self.vel_y = 0
-					dy = tile[1].top - self.rect.bottom	
-
-
-		#update grenade position
-		self.rect.x += dx + screen_scroll
-		self.rect.y += dy
-
-		#countdown timer
-		self.timer -= 1
-		if self.timer <= 0:
-			self.kill()
-			grenade_fx.play()
-			explosion = Explosion(self.rect.x, self.rect.y, 0.5)
-			explosion_group.add(explosion)
-			#do damage to anyone that is nearby
-			if abs(self.rect.centerx - player.rect.centerx) < TILE_SIZE * 2 and \
-				abs(self.rect.centery - player.rect.centery) < TILE_SIZE * 2:
-				player.health -= 50
-			for Monster in Monster_group:
-				if abs(self.rect.centerx - Monster.rect.centerx) < TILE_SIZE * 2 and \
-					abs(self.rect.centery - Monster.rect.centery) < TILE_SIZE * 2:
-					Monster.health -= 50
-
-
-
-class Explosion(pygame.sprite.Sprite):
-	def __init__(self, x, y, scale):
-		pygame.sprite.Sprite.__init__(self)
-		self.images = []
-		for num in range(1, 6):
-			img = pygame.image.load(f'PROJECT/IMG/explosion/exp{num}.png').convert_alpha()
-			img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
-			self.images.append(img)
-		self.frame_index = 0
-		self.image = self.images[self.frame_index]
-		self.rect = self.image.get_rect()
-		self.rect.center = (x, y)
-		self.counter = 0
-
-
-	def update(self):
-		#scroll
-		self.rect.x += screen_scroll
-
-		EXPLOSION_SPEED = 4
-		#update explosion amimation
-		self.counter += 1
-
-		if self.counter >= EXPLOSION_SPEED:
-			self.counter = 0
-			self.frame_index += 1
-			#if the animation is complete then delete the explosion
-			if self.frame_index >= len(self.images):
-				self.kill()
-			else:
-				self.image = self.images[self.frame_index]
-
+    Phương thức:
+        fade(self): Thực hiện hiệu ứng làm mờ màn hình và trả về True nếu hiệu ứng đã hoàn thành.
+"""
 
 class ScreenFade():
 	def __init__(self, direction, colour, speed):
@@ -680,11 +747,9 @@ intro_fade = ScreenFade(1, BLACK, 4)
 death_fade = ScreenFade(2, PINK, 4)
 win_fade = ScreenFade(2, WHITE, 4)
 
-
 #create buttons
 start_button = button.Button(SCREEN_WIDTH // 2 -100  , SCREEN_HEIGHT // 2 - 150, start_img, 1)
 menu_button = button.Button(SCREEN_WIDTH // 2 -100 , SCREEN_HEIGHT // 2 -40, menu_img, 1)
-
 exit_button = button.Button(SCREEN_WIDTH // 2 -100	 , SCREEN_HEIGHT // 2 + 70, exit_img, 1)
 restart_button = button.Button(SCREEN_WIDTH // 2 -100, SCREEN_HEIGHT // 2 - 50, restart_img, 2)
 back_img = pygame.image.load('PROJECT/IMG/back.png').convert_alpha()
@@ -693,8 +758,6 @@ back_button = button.Button(10,  10 , back_img, 1)
 #create sprite groups
 Monster_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
-grenade_group = pygame.sprite.Group()
-explosion_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
 decoration_group = pygame.sprite.Group()
 water_group = pygame.sprite.Group()
@@ -801,8 +864,6 @@ while run:
 
 		#update and draw groups
 		bullet_group.update()
-		grenade_group.update()
-		explosion_group.update()
 		item_box_group.update()
   
 		decoration_group.update()
@@ -810,8 +871,6 @@ while run:
 		exit_group.update()
 		bullet_group.draw(screen)
   
-		grenade_group.draw(screen)
-		explosion_group.draw(screen)
 		item_box_group.draw(screen)
 		water_group.draw(screen)
   
@@ -831,14 +890,6 @@ while run:
 			#shoot bullets
 			if shoot:
 				player.shoot()
-			#throw grenades
-			elif grenade and grenade_thrown == False and player.grenades > 0:
-				grenade = Grenade(player.rect.centerx + (0.5 * player.rect.size[0] * player.direction),\
-				 			player.rect.top, player.direction)
-				grenade_group.add(grenade)
-				#reduce grenades
-				player.grenades -= 1
-				grenade_thrown = True
 			if player.in_air:
 				player.update_action(2)#2: jump
 			elif moving_left or moving_right:
@@ -895,8 +946,6 @@ while run:
 					moving_right = True
 				if event.key == pygame.K_SPACE:
 					shoot = True
-				if event.key == pygame.K_q:
-					grenade = True
 				if event.key == pygame.K_w and player.alive:
 					player.jump = True
 					jump_fx.play()
@@ -928,9 +977,6 @@ while run:
 					moving_right = False
 				if event.key == pygame.K_SPACE:
 					shoot = False
-				if event.key == pygame.K_q:
-					grenade = False
-					grenade_thrown = False
 			if Game_control == 1:
 				if event.key == pygame.K_LEFT:
 					moving_left = False
@@ -938,8 +984,6 @@ while run:
 					moving_right = False
 				if event.key == pygame.K_SPACE:
 					shoot = False
-				if event.key == pygame.K_q:
-					grenade = False
 				
 				
 
