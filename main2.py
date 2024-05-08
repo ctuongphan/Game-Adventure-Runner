@@ -21,7 +21,7 @@ FPS = 60
 
 #define game variables
 GRAVITY = 0.75
-SCROLL_THRESH = 200
+SCROLL_THRESH = 400
 ROWS = 16
 COLS = 120
 TILE_SIZE = SCREEN_HEIGHT // ROWS
@@ -91,8 +91,10 @@ item_boxes = {
 #BG = (144, 201, 120)
 BG = (255, 193, 193)
 RED = (255, 0, 0)
+RED1 = (205, 85, 85)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
+GREEN1 = (0, 255, 0)
 BLACK = (0, 0, 0)
 PINK = (235, 65, 54)
 
@@ -100,11 +102,26 @@ PINK = (235, 65, 54)
 font = pygame.font.SysFont('Futura', 30)
 
 def draw_text(text, font, text_col, x, y):
+	"""
+	Input:
+text (str): Chuỗi văn bản cần vẽ.
+font (pygame.font.Font): Đối tượng font được sử dụng để vẽ văn bản.
+text_col (tuple): Màu của văn bản dưới dạng một bộ ba số nguyên (R, G, B).
+x (int): Tọa độ x của vị trí xuất phát của văn bản trên màn hình.
+y (int): Tọa độ y của vị trí xuất phát của văn bản trên màn hình.
+	Output:
+Phương thức này vẽ một chuỗi văn bản được cung cấp lên màn hình tại vị trí xác định,
+sử dụng font và màu sắc được chỉ định.
+	"""
 	img = font.render(text, True, text_col)
 	screen.blit(img, (x, y))
 
 
 def draw_bg():
+	"""
+	Output:
+ Hàm này sẽ vẽ nền của trò chơi và các lớp nền phía sau nhân vật.
+	"""
 	screen.fill(BG)
 	width = sky_img.get_width()
 	for x in range(5): 
@@ -126,10 +143,14 @@ for i in range(len(img_list)):
 
 #function to reset level
 def reset_level():
+	"""
+ 	Output:
+ Phương thức này xóa tất cả các đối tượng khỏi các nhóm như nhóm quái vật, nhóm đạn, nhóm hộp vật phẩm, vv.
+Sau đó, nó tạo ra một danh sách 2D trống với các giá trị âm (-1) cho mỗi ô, để đại diện cho màn hình trống.
+Đây là một phần của quy trình để chuẩn bị một cấp độ mới của trò chơi.
+	"""
 	Monster_group.empty()
 	bullet_group.empty()
-	#grenade_group.empty()
-	#explosion_group.empty()
 	item_box_group.empty()
 	decoration_group.empty()
 	water_group.empty()
@@ -193,10 +214,23 @@ def reset_level():
         check_alive(self): Kiểm tra xem nhân vật còn sống hay không.
         draw(self): Vẽ nhân vật lên màn hình.
 """
-class Soldier(pygame.sprite.Sprite):
-	# def __init__(self, char_type, x, y, scale, speed, ammo,grenades, index = 1):
+class Princess(pygame.sprite.Sprite):
 	def __init__(self, char_type, x, y, scale, speed, ammo, index = 1):
-     
+		"""
+		Khởi tạo một nhân vật mới.
+
+		Tham số:
+		- char_type: Loại nhân vật (vd: 'Player', 'Enemy').
+		- x: Tọa độ x ban đầu của nhân vật trên màn hình.
+		- y: Tọa độ y ban đầu của nhân vật trên màn hình.
+		- scale: Tỉ lệ để co giãn hình ảnh của nhân vật.
+		- speed: Tốc độ di chuyển của nhân vật.
+		- ammo: Số lượng đạn ban đầu mà nhân vật có.
+		- index: Chỉ số để phân biệt giữa các nhân vật cùng loại.
+
+		Trả về:
+		Không có giá trị trả về.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.alive = True
 		self.char_type = char_type
@@ -242,8 +276,12 @@ class Soldier(pygame.sprite.Sprite):
 		self.width = self.image.get_width()
 		self.height = self.image.get_height()
 
-
+     
 	def update(self):
+		"""
+		Input: Không có.
+		Output:  Cập nhật trạng thái và hoạt hình của nhân vật.
+		"""
 		self.update_animation()
 		self.check_alive()
 		#update cooldown
@@ -252,6 +290,18 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def move(self, moving_left, moving_right):
+		"""
+		Xử lý việc di chuyển của nhân vật.
+
+		Input:
+		moving_left: True nếu nhân vật đang di chuyển sang trái, False nếu không.
+		moving_right: True nếu nhân vật đang di chuyển sang phải, False nếu không.
+
+		Output:
+		screen_scroll: Sự thay đổi tọa độ của màn hình, để cuộn màn hình khi nhân vật tiến gần biên.
+		level_complete: True nếu nhân vật chạm vào điểm kết thúc cấp độ, False nếu không.
+		"""
+		
 		#reset movement variables
 		screen_scroll = 0
 		Vel_YY= -14
@@ -330,22 +380,32 @@ class Soldier(pygame.sprite.Sprite):
 		#update scroll based on player position
 		if self.char_type == 'player':
 #   and (moving_left or moving_right):
-			# if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
-			# 	or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
-			# 	self.rect.x -= dx
-			# 	# screen_scroll = -dx
-			# 	screen_scroll -= dx
-			if self.rect.centerx >= center_x:
-				screen_scroll -= self.speed
-				self.rect.x -= self.speed  # Di chuyển nhân vật ngược lại để giữ nguyên vị trí giữa màn hình
-			else:
-				screen_scroll = 0
+			if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
+				or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+				self.rect.x -= dx
+				screen_scroll -= dx
+   
+			# if self.rect.centerx >= center_x:
+			# 	screen_scroll -= self.speed
+			# 	self.rect.x -= self.speed  # Di chuyển nhân vật ngược lại để giữ nguyên vị trí giữa màn hình
+			# else:
+			# 	screen_scroll = 0
+
 			
 		return screen_scroll, level_complete
 
 
 
 	def shoot(self):
+		"""
+	Output:
+
+	Nếu shoot_cooldown bằng 0 và ammo lớn hơn 0:
+	Tạo một đối tượng đạn mới tại vị trí centerx của nhân vật với khoảng cách dọc bằng 0.75 chiều rộng của nhân vật (0.75 * self.rect.size[0]) và vị trí centery của nhân vật.
+	Thêm đối tượng đạn vào nhóm đạn (bullet_group).
+	Giảm ammo đi 1.
+	Phát âm thanh khi bắn đạn (shot_fx).
+		"""
 		if self.shoot_cooldown == 0 and self.ammo > 0:
 			self.shoot_cooldown = 20
 			bullet = Bullet(self.rect.centerx + (0.75 * self.rect.size[0] * self.direction), self.rect.centery, self.direction)
@@ -356,6 +416,22 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def ai(self):
+		"""
+	Input:
+player: Đối tượng người chơi.
+screen_scroll: Sự thay đổi vị trí của màn hình.
+
+	Output:
+Hàm này sẽ thực hiện các hành động sau:
+Kiểm tra xem Monster và người chơi có còn sống không.
+Nếu Monster không đang trong trạng thái đứng yên và số ngẫu nhiên trong khoảng từ 1 đến 200 là 1, nó sẽ cập nhật hành động thành trạng thái đứng yên và bắt đầu tính ngược thời gian đứng yên.
+Kiểm tra xem Monster có gần người chơi không bằng cách kiểm tra xem vùng nhìn của nó (vision) có chồng lấn với vùng của người chơi không. Nếu có, nó sẽ ngừng chạy và nhìn về phía người chơi, sau đó bắn đạn.
+Nếu không, nó sẽ tiếp tục di chuyển:
+Nếu đang trong trạng thái đứng yên, nó sẽ xác định hướng di chuyển và thực hiện di chuyển.
+Nếu di chuyển sang trái hoặc phải, nó sẽ cập nhật hành động thành trạng thái chạy.
+Nếu không đứng yên, nó sẽ đếm ngược thời gian đứng yên và khi hết thời gian, nó sẽ trở lại trạng thái di chuyển.
+Cuối cùng, vị trí của Monster sẽ được cập nhật dựa trên screen_scroll để đảm bảo nó di chuyển cùng với màn hình.
+		"""
 		if self.alive and player.alive:
 			if self.idling == False and random.randint(1, 200) == 1:
 				self.update_action(0)#0: idle
@@ -393,6 +469,12 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def update_animation(self):
+		"""
+	Output:
+Cập nhật self.image thành frame tiếp theo của animation.
+Nếu đủ thời gian đã trôi qua kể từ lần cập nhật animation trước đó, cập nhật self.frame_index sang frame tiếp theo.
+Nếu đã hiển thị hết tất cả các frame của animation, reset self.frame_index về 0 hoặc frame cuối cùng tùy thuộc vào hành động hiện tại của nhân vật.
+		"""
 		#update animation
 		ANIMATION_COOLDOWN = 100
 		#update image depending on current frame
@@ -411,6 +493,13 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def update_action(self, new_action):
+		"""
+  	Input:
+new_action: Một giá trị mới cho hành động của nhân vật.
+	Output:
+Nếu new_action khác với hành động hiện tại (self.action), hàm sẽ cập nhật self.action với giá trị mới và đặt self.frame_index về 0 để bắt đầu chạy animation từ đầu.
+Hàm cũng cập nhật thời gian cập nhật (self.update_time) bằng thời gian hiện tại.
+		"""
 		#check if the new action is different to the previous one
 		if new_action != self.action:
 			self.action = new_action
@@ -421,6 +510,10 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def check_alive(self):
+		"""
+	Output:
+Hàm này kiểm tra xem nhân vật có còn số máu lớn hơn 0 hay không. Nếu không, nó sẽ đặt số máu của nhân vật về 0, làm chậm tốc độ của nhân vật, đặt cờ alive của nhân vật thành False (đánh dấu nhân vật đã chết), và cập nhật hành động của nhân vật thành hành động 3 (die).
+		"""
 		if self.health <= 0:
 			self.health = 0
 			self.speed = 0
@@ -429,6 +522,10 @@ class Soldier(pygame.sprite.Sprite):
 
 
 	def draw(self):
+		"""
+	Output:
+Vẽ hình ảnh của Princess lên màn hình với việc lật theo chiều ngang (nếu được yêu cầu).
+		"""
 		screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
 
@@ -450,12 +547,26 @@ class Soldier(pygame.sprite.Sprite):
 
 class Water(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
+		"""
+  	Input:
+        img (pygame.Surface): Hình ảnh của sprite.
+        x (int): Tọa độ x của sprite trên màn hình.
+        y (int): Tọa độ y của sprite trên màn hình.
+
+    Output:
+		Khởi tạo một đối tượng sprite mới.
+		Đối tượng sprite này được sử dụng để hiển thị một hình ảnh cụ thể trên màn hình.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.image = img
 		self.rect = self.image.get_rect()
 		self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
 	def update(self):
+		"""
+	Output:
+Hàm này chỉ thay đổi thuộc tính self.rect.x của đối tượng. Điều này dẫn đến di chuyển của đối tượng theo hướng và khoảng cách được chỉ định bởi screen_scroll.
+		"""
 		self.rect.x += screen_scroll
 
 """
@@ -471,9 +582,21 @@ class Water(pygame.sprite.Sprite):
 """
 class World():
 	def __init__(self):
+		"""
+	Output:
+		Khởi tạo một thế giới mới.
+		"""
 		self.obstacle_list = []
-
+  
 	def process_data(self, data, index):
+		"""
+	Input:
+data: Mảng 2 chiều chứa dữ liệu của cấp độ trò chơi, trong đó mỗi phần tử đại diện cho một ô trong bản đồ.
+index: Chỉ mục của nhân vật (player).
+	Output:
+player: Đối tượng Princess đại diện cho nhân vật player.
+health_bar: Đối tượng HealthBar đại diện cho thanh máu của nhân vật player.
+		"""
 		self.level_length = len(data[0])
 		#iterate through each value in level data file
 		for y, row in enumerate(data):
@@ -493,12 +616,12 @@ class World():
 						decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
 						decoration_group.add(decoration)
 					elif tile == 15:#create player
-						# player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5,index)
-						player = Soldier('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20,index)
+						# player = Princess('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20, 5,index)
+						player = Princess('player', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20,index)
 						health_bar = HealthBar(10, 10, player.health, player.health)
 					elif tile == 16:#create enemies
-						# Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0,1)	
-						Monster = Soldier('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 1)
+						# Monster = Princess('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 0,1)	
+						Monster = Princess('Monster', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2, 20, 1)
 						Monster_group.add(Monster)
 					elif tile == 17:#create ammo box
 						item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE, 35, 35)
@@ -517,6 +640,10 @@ class World():
 
 
 	def draw(self):
+		"""
+	Output:
+Hàm này chỉ thực hiện vẽ lại các ô cản trong trò chơi (tiles) sau khi đã được dịch chuyển dựa trên sự thay đổi của màn hình (screen_scroll). Cụ thể, nó di chuyển các ô cản theo hướng đối lập với hướng di chuyển của màn hình, sau đó vẽ chúng lên màn hình.
+		"""
 		for tile in self.obstacle_list:
 			tile[1][0] += screen_scroll
 			screen.blit(tile[0], tile[1])
@@ -539,12 +666,24 @@ class World():
 
 class Decoration(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
+		"""
+	Input:
+img: Hình ảnh của sprite.
+x: Tọa độ x của sprite.
+y: Tọa độ y của sprite.
+	Output:
+Hàm chỉ khởi tạo các thuộc tính của đối tượng.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.image = img
 		self.rect = self.image.get_rect()
 		self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
 	def update(self):
+		"""
+	Output:
+Cập nhật vị trí x mới của đối tượng sau khi dịch chuyển theo screen_scroll.
+		"""
 		self.rect.x += screen_scroll
 
 
@@ -566,12 +705,24 @@ class Decoration(pygame.sprite.Sprite):
 
 class Exit(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
+		"""
+	Input:
+img: Một hình ảnh của sprite.
+x: Tọa độ x của sprite.
+y: Tọa độ y của sprite.
+	Output:
+Hàm này khởi tạo một sprite với hình ảnh và tọa độ đã cho.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.image = img
 		self.rect = self.image.get_rect()
 		self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
 	def update(self):
+		"""
+	Output:
+Hàm này chỉ thay đổi thuộc tính rect.x của đối tượng Sprite, điều chỉnh vị trí của nó dựa trên sự dịch chuyển của màn hình (screen_scroll).
+		"""
 		self.rect.x += screen_scroll
 
 """
@@ -593,6 +744,19 @@ class Exit(pygame.sprite.Sprite):
 
 class ItemBox(pygame.sprite.Sprite):
 	def __init__(self, item_type, x, y, width, height):
+		"""
+	Input:
+item_type: Loại của hộp vật phẩm.
+x: Tọa độ x của hộp vật phẩm.
+y: Tọa độ y của hộp vật phẩm.
+width: Chiều rộng của hộp vật phẩm.
+height: Chiều cao của hộp vật phẩm.
+	Output:
+Khởi tạo một đối tượng vật phẩm với các thuộc tính sau:
+item_type: Loại của hộp vật phẩm.
+image: Hình ảnh của hộp vật phẩm đã được chuyển đổi kích thước thành (width, height).
+rect: Hình chữ nhật giới hạn của hộp vật phẩm, có tọa độ (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height())) cho điểm trung tâm trên cùng.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.item_type = item_type
 		# self.image = item_boxes[self.item_type]
@@ -602,6 +766,14 @@ class ItemBox(pygame.sprite.Sprite):
 
 
 	def update(self):
+		"""
+	Output:
+Nếu người chơi va chạm với vật phẩm, vật phẩm sẽ kiểm tra loại và thực hiện hành động tương ứng:
+Nếu loại là 'Health', sức khỏe của người chơi tăng thêm 25 điểm. Nếu sức khỏe vượt quá giới hạn tối đa, sẽ được cắt ngắn để không vượt quá giới hạn đó.
+Nếu loại là 'Ammo', số lượng đạn của người chơi tăng thêm 15 viên.
+Nếu loại là 'Shoe', tốc độ rơi của người chơi tăng lên 4 pixel mỗi frame.
+Hộp sẽ bị xóa sau khi được chọn.
+		"""
 		#scroll
 		self.rect.x += screen_scroll
 		#check if the player has picked up the box
@@ -636,19 +808,42 @@ class ItemBox(pygame.sprite.Sprite):
 
 class HealthBar():
 	def __init__(self, x, y, health, max_health):
+		"""
+		Input:
+x: Tọa độ x của thanh máu trên màn hình.
+y: Tọa độ y của thanh máu trên màn hình.
+health: Số lượng máu hiện tại của đối tượng.
+max_health: Số lượng máu tối đa của đối tượng.
+	Output:
+Hàm này chỉ khởi tạo các thuộc tính của thanh máu cho đối tượng.
+		"""
 		self.x = x
 		self.y = y
 		self.health = health
 		self.max_health = max_health
 
 	def draw(self, health):
+		"""
+	Input:
+health: Giá trị hiện tại của sức khỏe của đối tượng.
+	Output:
+Vẽ thanh máu trên màn hình với sức khỏe mới được cập nhật.
+Giải thích:
+Hàm draw này nhận giá trị sức khỏe hiện tại của đối tượng và vẽ thanh máu tương ứng trên màn hình.
+Cập nhật giá trị sức khỏe mới cho đối tượng.
+Tính tỷ lệ sức khỏe so với sức khỏe tối đa.
+Vẽ một hình chữ nhật màu đen (viền) có kích thước lớn hơn so với phần hiển thị sức khỏe.
+Vẽ một hình chữ nhật màu đỏ (nền) biểu thị phần sức khỏe còn lại.
+Vẽ một hình chữ nhật màu xanh lá cây (nội dung) biểu thị phần sức khỏe hiện tại dựa trên tỷ lệ tính toán.
+		"""
 		#update with new health
 		self.health = health
 		#calculate health ratio
 		ratio = self.health / self.max_health
-		pygame.draw.rect(screen, BLACK, (self.x - 2, self.y - 2, 154, 24))
-		pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
-		pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
+		# pygame.draw.rect(screen, BLACK, (self.x - 2, self.y - 2, 154, 24))
+		pygame.draw.rect(screen, BLACK, (self.x - 1, self.y - 1, 152, 22))
+		pygame.draw.rect(screen, RED1, (self.x, self.y, 150, 20))
+		pygame.draw.rect(screen, GREEN1, (self.x, self.y, 150 * ratio, 20))
 
 """
     Đại diện cho một viên đạn trong trò chơi.
@@ -670,6 +865,14 @@ class HealthBar():
 
 class Bullet(pygame.sprite.Sprite):
 	def __init__(self, x, y, direction):
+		"""
+	Input:
+x: Tọa độ x ban đầu của viên đạn.
+y: Tọa độ y ban đầu của viên đạn.
+direction: Hướng di chuyển của viên đạn (1: sang phải, -1: sang trái).
+	Output:
+Hàm này chỉ khởi tạo một đối tượng viên đạn với các thuộc tính như tốc độ, hình ảnh, vị trí ban đầu và hướng di chuyển.
+		"""
 		pygame.sprite.Sprite.__init__(self)
 		self.speed = 10
 		self.image = bullet_img
@@ -678,6 +881,12 @@ class Bullet(pygame.sprite.Sprite):
 		self.direction = direction
 
 	def update(self):
+		"""
+	Output:
+Cập nhật vị trí của viên đạn.
+Kiểm tra va chạm với các chướng ngại vật trong thế giới trò chơi và diệt viên đạn nếu có va chạm.
+Kiểm tra va chạm với người chơi và quái vật, giảm sức khỏe của họ tương ứng nếu có va chạm và diệt viên đạn.
+		"""
 		#move bullet
 		self.rect.x += (self.direction * self.speed) + screen_scroll
 		#check if bullet has gone off screen
@@ -720,6 +929,14 @@ class Bullet(pygame.sprite.Sprite):
 
 class ScreenFade():
 	def __init__(self, direction, colour, speed):
+		"""
+		Input:
+direction: Hướng di chuyển của hiệu ứng (ví dụ: "left", "right", "up", "down").
+colour: Màu sắc của hiệu ứng.
+speed: Tốc độ di chuyển của hiệu ứng.
+		Output:
+Hàm này chỉ khởi tạo các thuộc tính của đối tượng hiệu ứng.
+		"""
 		self.direction = direction
 		self.colour = colour
 		self.speed = speed
@@ -727,6 +944,10 @@ class ScreenFade():
 
 
 	def fade(self):
+		"""
+		Output:
+fade_complete: Trạng thái của quá trình fade (True nếu hoàn thành, False nếu chưa hoàn thành).
+		"""
 		fade_complete = False
 		self.fade_counter += self.speed
 		if self.direction == 1:#whole screen fade
@@ -753,8 +974,12 @@ menu_button = button.Button(SCREEN_WIDTH // 2 -100 , SCREEN_HEIGHT // 2 -40, men
 exit_button = button.Button(SCREEN_WIDTH // 2 -100	 , SCREEN_HEIGHT // 2 + 70, exit_img, 1)
 restart_button = button.Button(SCREEN_WIDTH // 2 -100, SCREEN_HEIGHT // 2 - 50, restart_img, 2)
 back_img = pygame.image.load('PROJECT/IMG/back.png').convert_alpha()
+pause_img = pygame.image.load('PROJECT/IMG/pause.png').convert_alpha()
+resume_img = pygame.image.load('PROJECT/IMG/resumen.png').convert_alpha()
 back_button = button.Button(10,  10 , back_img, 1)
-
+pause_button = button.Button(SCREEN_WIDTH - 40, 10 , pause_img,1)
+resume_button = button.Button(SCREEN_WIDTH // 2 -100 , SCREEN_HEIGHT // 2 -40, resume_img, 1)
+exit_home_button = button.Button(SCREEN_WIDTH // 2 -100	 , SCREEN_HEIGHT // 2 + 70, exit_img, 1)
 #create sprite groups
 Monster_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
@@ -810,6 +1035,8 @@ loaiphim2= pygame.transform.scale(loaiphim2, (80, 80))
 
 
 run = True
+home = True
+pause_game = False
 while run:
 
 	clock.tick(FPS)
@@ -823,35 +1050,35 @@ while run:
  
 	Score = 0
 	
-	if start_game == False:
+	if home == True:
 		#draw menu
 		screen.fill(BG)
 		#add buttons
 		if start_button.draw(screen):
 			start_game = True
 			start_intro = True
+			home = False
 		if exit_button.draw(screen):
 			run = False
    
 		if menu_button.draw(screen):
 			menu_game = True
-	else:
+	elif start_game == True: 
 		#update background
 		draw_bg()
 		Score = sum(1 for monster in Monster_group if not monster.alive) *10
-		img=font.render(f'Score:{Score}',True,'red')
-		screen.blit(img,(10,100))
+		img=font.render(f'SCORE: {Score}', True, RED)
+		screen.blit(img,(10, 65))
 		#draw world map
 		world.draw()
-		#draw_grid()
   
 		#show player health
 		health_bar.draw(player.health)
-		#show ammo
-		draw_text('AMMO: ', font, WHITE, 10, 35)
+		#show bullet
+		draw_text('BULLET: ', font, RED, 10, 40)
 		for x in range(player.ammo):
-			screen.blit(bullet_img, (90 + (x * 10), 40))
-		#show grenades
+			screen.blit(bullet_img, (100 + (x * 10), 45))
+	
 
 
 		player.update()
@@ -879,14 +1106,23 @@ while run:
   
 
 		if level ==3:
-				win_fade.fade()
-				text = 'WIN'
-				font_size = 100  # Kích thước mới bạn muốn
-				font = pygame.font.Font(None, font_size)
-				img = font.render(text, True, 'green')
-				screen.blit(img,(SCREEN_HEIGHT/2+50,SCREEN_HEIGHT/2))
+				win_image = pygame.image.load("PROJECT/IMG/win.jpg")
+				win_image = pygame.transform.scale(win_image, (800, 640))
+				screen.blit(win_image, (SCREEN_HEIGHT/2 - win_image.get_width()/2 +80, SCREEN_HEIGHT/2 - win_image.get_height()/2))
+				# win_fade.fade()
+				# text = 'WIN'
+				# font_size = 100  # Kích thước mới bạn muốn
+				# font = pygame.font.Font(None, font_size)
+				# img = font.render(text, True, 'green')
+				# screen.blit(img,(SCREEN_HEIGHT/2+50,SCREEN_HEIGHT/2))
+		# win_fade.fade()
+		# screen.fill(PINK)
+		# win_image = pygame.image.load("PROJECT/IMG/win.jpg")
+		# win_image = pygame.transform.scale(win_image, (800, 640))
+		# screen.blit(win_image, (SCREEN_HEIGHT/2 - win_image.get_width()/2 +80, SCREEN_HEIGHT/2 - win_image.get_height()/2))
+  
 		#update player actions
-		if player.alive:
+		if player.alive:      
 			#shoot bullets
 			if shoot:
 				player.shoot()
@@ -930,7 +1166,149 @@ while run:
 								world_data[x][y] = int(tile)
 					world = World()
 					player, health_bar = world.process_data(world_data, index)
+		if pause_button.draw(screen):
+			start_game = False
+			pause_game = True
+	elif pause_game == True and start_game ==False :
+		screen.fill(BG)
+		if exit_button.draw(screen):
+			home = True
+			pause_game = False
+			if exit_button.clicked:
+				index =1
+				level = 1
+				player, health_bar = world.process_data(world_data,index)
+				
+				Monster_group = pygame.sprite.Group()
+				bullet_group = pygame.sprite.Group()
+				item_box_group = pygame.sprite.Group()
+				decoration_group = pygame.sprite.Group()
+				water_group = pygame.sprite.Group()
+				exit_group = pygame.sprite.Group()
 
+
+
+				#create empty tile list
+				world_data = []
+				for row in range(ROWS):
+					r = [-1] * COLS
+					world_data.append(r)
+				#load in level data and create world
+				with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
+					reader = csv.reader(csvfile, delimiter=',')
+					for x, row in enumerate(reader):
+						for y, tile in enumerate(row):
+							world_data[x][y] = int(tile)
+				world = World()
+				index =1
+				player, health_bar = world.process_data(world_data,index)
+
+				princess1 = pygame.image.load(f'PROJECT/IMG/Player1/Walk/0.png').convert_alpha() 
+				princess1= pygame.transform.scale(princess1, (70, 70))
+
+				princess2 = pygame.image.load(f'PROJECT/IMG/Player2/Walk/0.png').convert_alpha() 
+				princess2= pygame.transform.scale(princess2, (70, 70))
+
+				arrowLeft = pygame.image.load('PROJECT/IMG/left.png').convert_alpha()
+				arrowLeft= pygame.transform.scale(arrowLeft, (50, 50))
+				yNv = 200
+				yLoai =330
+				xAR = SCREEN_WIDTH / 2 
+				arLeft_button_nv = button.Button(xAR, yNv, arrowLeft, 1)
+				arLeft_button_loai = button.Button(xAR, yLoai, arrowLeft, 1)
+
+
+
+				arrowRight = pygame.image.load('PROJECT/IMG/right.png').convert_alpha()
+				arrowRight= pygame.transform.scale(arrowRight, (50, 50))
+				arRight_button_nv = button.Button(xAR +120, yNv, arrowRight, 1)
+				arRight_button_loai = button.Button(xAR +120, yLoai, arrowRight, 1)
+
+				Game_control = 0
+				loaiphim1 = pygame.image.load('PROJECT/IMG/BP1.png').convert_alpha()
+				loaiphim1= pygame.transform.scale(loaiphim1, (80, 80))
+
+				loaiphim2 = pygame.image.load('PROJECT/IMG/BP2.png').convert_alpha()
+				loaiphim2= pygame.transform.scale(loaiphim2, (80, 80))
+
+
+
+		if resume_button.draw(screen):
+			start_game = True
+			menu_game = False
+			pause_game = False
+
+	if menu_game == True:
+		screen.fill(BG)
+
+		# font = pygame.font.SysFont('Arial', 32, bold=True)
+
+		choose_nv = font.render("Choose", True, (205, 85, 85))
+		screen.blit(choose_nv, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 - 120))
+		
+		flag_check_index = True
+
+		if index==1 and arLeft_button_nv.draw(screen):
+			index=2
+			flag_check_index = False
+
+		if index==1 and arRight_button_nv.draw(screen):
+			index=2
+			flag_check_index = False
+
+		if index==2 and arLeft_button_nv.draw(screen):
+			index=1
+			flag_check_index = False
+
+		if index==2 and arRight_button_nv.draw(screen):
+			index=1
+			flag_check_index = False
+
+		if index==1:
+			screen.blit(princess1, (xAR+50, yNv))
+		elif index ==2:
+			screen.blit(princess2, (xAR+50, yNv))
+			
+			Monster_group = pygame.sprite.Group()
+			bullet_group = pygame.sprite.Group()
+			item_box_group = pygame.sprite.Group()
+			decoration_group = pygame.sprite.Group()
+			water_group = pygame.sprite.Group()
+			exit_group = pygame.sprite.Group()
+			#create empty tile list
+			world_data = []
+			for row in range(ROWS):
+				r = [-1] * COLS
+				world_data.append(r)
+			#load in level data and create world
+			with open(f'PROJECT/level{level}_data.csv', newline='') as csvfile:
+				reader = csv.reader(csvfile, delimiter=',')
+				for x, row in enumerate(reader):
+					for y, tile in enumerate(row):
+						world_data[x][y] = int(tile)
+			world = World()
+			player, health_bar = world.process_data(world_data,index)
+		if flag_check_index == False:
+			player, health_bar = world.process_data(world_data,index)
+
+			
+		choose_loai = font.render("Choose", True, (205, 85, 85))
+		screen.blit(choose_loai, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 + 10))
+
+		if Game_control == 0 and arLeft_button_loai.draw(screen):
+			Game_control = 1
+		if Game_control ==0 and arRight_button_loai.draw(screen):
+			Game_control = 1
+		if Game_control == 1 and arLeft_button_loai.draw(screen):
+			Game_control = 0
+		if Game_control ==1 and arRight_button_loai.draw(screen):
+			Game_control = 0
+		if Game_control == 0:
+			screen.blit(loaiphim1, (xAR+50, yLoai))
+		else:
+			screen.blit(loaiphim2, (xAR+50, yLoai))
+		if back_button.draw(screen):
+			menu_game = False
 
 	for event in pygame.event.get():
 		#quit game
@@ -984,62 +1362,6 @@ while run:
 					moving_right = False
 				if event.key == pygame.K_SPACE:
 					shoot = False
-				
-				
-
-	if menu_game:
-		screen.fill(BG)
-
-		font = pygame.font.SysFont('Arial', 32, bold=True)
-
-		choose_nv = font.render("Choose", True, (205, 85, 85))
-		screen.blit(choose_nv, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 - 120))
-		
-		flag_check_index = True
-
-		if index==1 and arLeft_button_nv.draw(screen):
-			index=2
-			flag_check_index = False
-
-		if index==1 and arRight_button_nv.draw(screen):
-			index=2
-			flag_check_index = False
-
-		if index==2 and arLeft_button_nv.draw(screen):
-			index=1
-			flag_check_index = False
-
-		if index==2 and arRight_button_nv.draw(screen):
-			index=1
-			flag_check_index = False
-
-		if index==1:
-			screen.blit(princess1, (xAR+50, yNv))
-		elif index ==2:
-			screen.blit(princess2, (xAR+50, yNv))
-		if flag_check_index == False:
-			player, health_bar = world.process_data(world_data,index)
-
-			
-		choose_loai = font.render("Choose", True, (205, 85, 85))
-		screen.blit(choose_loai, (SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 + 10))
-
-		if Game_control == 0 and arLeft_button_loai.draw(screen):
-			Game_control = 1
-		if Game_control ==0 and arRight_button_loai.draw(screen):
-			Game_control = 1
-		if Game_control == 1 and arLeft_button_loai.draw(screen):
-			Game_control = 0
-		if Game_control ==1 and arRight_button_loai.draw(screen):
-			Game_control = 0
-		if Game_control == 0:
-			screen.blit(loaiphim1, (xAR+50, yLoai))
-		else:
-			screen.blit(loaiphim2, (xAR+50, yLoai))
-		if back_button.draw(screen):
-			menu_game = False
-
-
 		
 
 
@@ -1052,3 +1374,4 @@ while run:
 	pygame.display.update()
 
 pygame.quit()
+print(Princess.__doc__)
