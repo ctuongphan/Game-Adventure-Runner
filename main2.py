@@ -1374,4 +1374,3 @@ while run:
 	pygame.display.update()
 
 pygame.quit()
-print(Princess.__doc__)
